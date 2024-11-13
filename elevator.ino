@@ -63,7 +63,6 @@ char dequeue()
 
 void printQueue()
 {
-  Serial.print("Queue: ");
   for (int i = 0; i < itemCount; i++)
   {
     Serial.print(queue[(front + i) % QUEUE_SIZE]);
@@ -93,20 +92,8 @@ void loop()
         if (!isQueueFull())
         {
           enqueue(customKey);
-          Serial.print("Enqueued: ");
-          Serial.println(customKey);
           printQueue();
         }
-        else
-        {
-          Serial.println("Queue is full");
-        }
-      }
-      else
-      {
-        Serial.print("Key ");
-        Serial.print(customKey);
-        Serial.println(" is already in the queue");
       }
     }
     else if (customKey == 'A')
@@ -114,19 +101,8 @@ void loop()
       if (itemCount > 0)
       {
         char dequeuedKey = dequeue();
-        Serial.print("Dequeued: ");
-        Serial.println(dequeuedKey);
         printQueue();
       }
-      else
-      {
-        Serial.println("Queue is empty");
-      }
-    }
-    else
-    {
-      Serial.print("Ignored key: ");
-      Serial.println(customKey);
     }
   }
 }
