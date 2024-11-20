@@ -11,11 +11,7 @@
 
 // void loop()
 // {
-//     myStepper.setSpeed(5);
-//     myStepper.step(stepsPerRevolution);
-//     delay(1000);
 
-//     myStepper.setSpeed(10);
+//     myStepper.setSpeed(25);
 //     myStepper.step(-stepsPerRevolution);
-//     delay(1000);
 // }

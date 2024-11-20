@@ -1,108 +1,117 @@
 #include <Keypad.h>
+#include <Servo.h>
 
-const byte ROWS = 4;
-const byte COLS = 4;
+// Keypad Setup
+const byte ROWS = 2;
+const byte COLS = 3;
 
 char hexaKeys[ROWS][COLS] = {
-    {'1', '2', '3', '4'},
-    {'5', '6', 'A', '.'},
-    {'.', '.', '.', '.'},
-    {'.', '.', '.', '.'}};
+    {'1', '2', '3'},
+    {'4', '5', '6'}};
 
-byte rowPins[ROWS] = {2, 3, 0, 0};
-byte colPins[COLS] = {4, 5, 6, 7};
+byte rowPins[ROWS] = {2, 3};
+byte colPins[COLS] = {4, 5, 6};
 
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
+Servo servo;
+int pos = 0;
+unsigned long lastServoUpdate = 0;
+int servoDirection = 1;
+
 const int QUEUE_SIZE = 6;
-char queue[QUEUE_SIZE];
+int queue[QUEUE_SIZE];
 int front = 0;
 int rear = -1;
 int itemCount = 0;
 
 bool isQueueFull()
 {
-  return itemCount == QUEUE_SIZE;
+    return itemCount == QUEUE_SIZE;
 }
 
-bool isInQueue(char data)
+bool isInQueue(int data)
 {
-  for (int i = 0; i < itemCount; i++)
-  {
-    if (queue[(front + i) % QUEUE_SIZE] == data)
+    for (int i = 0; i < itemCount; i++)
     {
-      return true;
+        if (queue[(front + i) % QUEUE_SIZE] == data)
+        {
+            return true;
+        }
     }
-  }
-  return false;
+    return false;
 }
 
-void enqueue(char data)
+void enqueue(int data)
 {
-  if (itemCount != QUEUE_SIZE)
-  {
-    if (rear == QUEUE_SIZE - 1)
+    if (!isQueueFull())
     {
-      rear = -1;
+        if (rear == QUEUE_SIZE - 1)
+        {
+            rear = -1;
+        }
+        queue[++rear] = data;
+        itemCount++;
     }
-    queue[++rear] = data;
-    itemCount++;
-  }
 }
 
-char dequeue()
+int dequeue()
 {
-  char data = queue[front++];
-  if (front == QUEUE_SIZE)
-  {
-    front = 0;
-  }
-  itemCount--;
-  return data;
+    int data = queue[front++];
+    if (front == QUEUE_SIZE)
+    {
+        front = 0;
+    }
+    itemCount--;
+    return data;
 }
 
 void printQueue()
 {
-  for (int i = 0; i < itemCount; i++)
-  {
-    Serial.print(queue[(front + i) % QUEUE_SIZE]);
-    if (i < itemCount - 1)
+    for (int i = 0; i < itemCount; i++)
     {
-      Serial.print(", ");
+        Serial.print(queue[(front + i) % QUEUE_SIZE]);
+        if (i < itemCount - 1)
+        {
+            Serial.print(", ");
+        }
     }
-  }
-  Serial.println();
+    Serial.println();
+}
+
+void moveServoNonBlocking()
+{
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastServoUpdate >= 15)
+    {
+        pos += servoDirection;
+        if (pos >= 180 || pos <= 0)
+        {
+            servoDirection *= -1;
+        }
+        servo.write(pos);
+        lastServoUpdate = currentMillis;
+    }
 }
 
 void setup()
 {
-  Serial.begin(9600);
+    Serial.begin(9600);
+    servo.attach(7);
 }
 
 void loop()
 {
-  char customKey = customKeypad.getKey();
-
-  if (customKey)
-  {
-    if (customKey >= '1' && customKey <= '6')
+    char customKey = customKeypad.getKey();
+    if (customKey)
     {
-      if (!isInQueue(customKey))
-      {
-        if (!isQueueFull())
+        int customKeyInt = customKey - '0';
+        if (!isInQueue(customKeyInt) && !isQueueFull())
         {
-          enqueue(customKey);
-          printQueue();
+            enqueue(customKeyInt);
+            printQueue();
         }
-      }
     }
-    else if (customKey == 'A')
-    {
-      if (itemCount > 0)
-      {
-        char dequeuedKey = dequeue();
-        printQueue();
-      }
-    }
-  }
+
+    moveServoNonBlocking();
 }
