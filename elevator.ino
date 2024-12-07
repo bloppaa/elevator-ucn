@@ -45,8 +45,8 @@ void loop()
         int requestedFloor = customKey - '0'; // Convert character to integer
         if (requestedFloor >= 1 && requestedFloor <= 6 && requestedFloor != currentFloor)
         {
-            Serial.print("Requested floor: ");
-            Serial.println(requestedFloor);
+            Serial.print("Requested: ");
+            Serial.print(requestedFloor);
 
             // Add the floor to the queue if it is not already in the queue
             if (!floorQueue.contains(requestedFloor))
@@ -62,8 +62,8 @@ void loop()
         int targetFloor = floorQueue.dequeue(); // Get the next floor from the queue
         if (targetFloor != currentFloor)
         {
-            Serial.print("Moving to floor: ");
-            Serial.println(targetFloor);
+            Serial.print("Moving: ");
+            Serial.print(targetFloor);
 
             totalSteps = calculateSteps(currentFloor, targetFloor);
             stepsMoved = 0; // Reset step counter
