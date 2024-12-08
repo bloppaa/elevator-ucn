@@ -30,7 +30,7 @@ public:
     {
         if (isFull())
         {
-            return; // Queue is full, ignore enqueue
+            return;
         }
         rear = (rear + 1) % capacity;
         data[rear] = item;
@@ -41,7 +41,7 @@ public:
     {
         if (isEmpty())
         {
-            return T(); // Return default value if empty
+            return T();
         }
         T item = data[front];
         front = (front + 1) % capacity;

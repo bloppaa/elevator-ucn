@@ -1,6 +1,8 @@
 #include <Keypad.h>
 #include <Stepper.h>
-#include "Queue.h" // Include the queue header file
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include "Queue.h"
 
 const byte ROWS = 2;
 const byte COLS = 3;
@@ -20,18 +22,23 @@ Stepper myStepper(stepsPerRevolution, 8, 10, 9, 11);
 // Floor heights (index 0 is unused)
 const float HEIGHTS[] = {0, 8000, 6000, 3000, 3000, 3000};
 
-float currentFloor = 5;
+float currentFloor = 1;
 
-// Instantiate the queue with a maximum size of 10
-Queue<int> floorQueue(10);
+Queue<int> floorQueue(6);
 
 // Non-blocking motor control variables
 int totalSteps = 0;
 int stepsMoved = 0;
 bool isMoving = false;
 
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
 void setup()
 {
+    lcd.init();
+    lcd.backlight();
+    lcd.setCursor(0, 0);
+
     Serial.begin(9600);
     myStepper.setSpeed(15); // Set motor speed
 }
@@ -42,11 +49,13 @@ void loop()
     char customKey = customKeypad.getKey();
     if (customKey)
     {
+        lcd.clear();
         int requestedFloor = customKey - '0'; // Convert character to integer
         if (requestedFloor >= 1 && requestedFloor <= 6 && requestedFloor != currentFloor)
         {
+            lcd.print(customKey);
             Serial.print("Requested: ");
-            Serial.print(requestedFloor);
+            Serial.println(requestedFloor);
 
             // Add the floor to the queue if it is not already in the queue
             if (!floorQueue.contains(requestedFloor))
@@ -63,7 +72,7 @@ void loop()
         if (targetFloor != currentFloor)
         {
             Serial.print("Moving: ");
-            Serial.print(targetFloor);
+            Serial.println(targetFloor);
 
             totalSteps = calculateSteps(currentFloor, targetFloor);
             stepsMoved = 0; // Reset step counter
