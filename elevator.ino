@@ -1,5 +1,5 @@
 #include <Keypad.h>
-#include <Stepper.h>
+#include <AccelStepper.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "Queue.h"
@@ -16,9 +16,6 @@ byte colPins[COLS] = {4, 5, 6};
 
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
-const float stepsPerRevolution = 2038;
-Stepper myStepper(stepsPerRevolution, 8, 10, 9, 11);
-
 const float HEIGHTS[] = {0, 8000, 6000, 3000, 3000, 3000};
 
 float currentFloor = 1;
@@ -31,6 +28,13 @@ bool isMoving = false;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+const int MOTOR_PIN1 = 8;
+const int MOTOR_PIN2 = 10;
+const int MOTOR_PIN3 = 9;
+const int MOTOR_PIN4 = 11;
+
+AccelStepper myStepper(AccelStepper::FULL4WIRE, MOTOR_PIN1, MOTOR_PIN2, MOTOR_PIN3, MOTOR_PIN4);
+
 void setup()
 {
   lcd.init();
@@ -38,7 +42,10 @@ void setup()
   lcd.setCursor(0, 0);
 
   Serial.begin(9600);
-  myStepper.setSpeed(15);
+  
+  myStepper.setMaxSpeed(750);
+  myStepper.setAcceleration(400);
+  myStepper.setCurrentPosition(0);
 }
 
 void loop()
@@ -76,7 +83,8 @@ void loop()
       }
 
       totalSteps = calculateSteps(currentFloor, targetFloor);
-      stepsMoved = 0;
+      myStepper.moveTo(myStepper.currentPosition() + totalSteps);
+
       isMoving = true;
       currentFloor = targetFloor;
     }
@@ -84,16 +92,12 @@ void loop()
 
   if (isMoving)
   {
-    if (stepsMoved < abs(totalSteps))
-    {
-      int stepDirection = totalSteps > 0 ? 1 : -1;
-      myStepper.step(stepDirection);
-      stepsMoved++;
-    }
-    else
+    myStepper.run();
+
+    if (myStepper.distanceToGo() == 0)
     {
       isMoving = false;
-      Serial.println("Reached floor.");
+      Serial.println("Reached floor");
 
       lcd.clear();
       delay(500);
