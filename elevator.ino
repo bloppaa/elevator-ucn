@@ -8,44 +8,39 @@ const byte ROWS = 2;
 const byte COLS = 3;
 
 char hexaKeys[ROWS][COLS] = {
-  {'1', '2', '3'},
-  {'4', '5', '6'}};
+    {'1', '2', '3'},
+    {'4', '5', '6'}};
 
 byte rowPins[ROWS] = {2, 3};
 byte colPins[COLS] = {4, 5, 6};
 
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
-const float HEIGHTS[] = {0, 8000, 6000, 3000, 3000, 3000};
+const float HEIGHTS[] = {0, 2038, 2038, 2038, 2038, 2038};
 
-float currentFloor = 1;
-
-Queue<int> floorQueue(6);
-
-int totalSteps = 0;
-int stepsMoved = 0;
-bool isMoving = false;
+AccelStepper myStepper(AccelStepper::FULL4WIRE, 8, 10, 9, 11);
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-const int MOTOR_PIN1 = 8;
-const int MOTOR_PIN2 = 10;
-const int MOTOR_PIN3 = 9;
-const int MOTOR_PIN4 = 11;
+Queue<int> floorQueue(6);
 
-AccelStepper myStepper(AccelStepper::FULL4WIRE, MOTOR_PIN1, MOTOR_PIN2, MOTOR_PIN3, MOTOR_PIN4);
+int currentFloor = 1;
+int targetFloor = -1;
+bool isMoving = false;
 
 void setup()
 {
   lcd.init();
   lcd.backlight();
-  lcd.setCursor(0, 0);
-
   Serial.begin(9600);
-  
+
   myStepper.setMaxSpeed(750);
-  myStepper.setAcceleration(400);
-  myStepper.setCurrentPosition(0);
+  myStepper.setAcceleration(500);
+  lcd.setCursor(0, 0);
+  lcd.print("Esperando");
+  lcd.setCursor(0, 1);
+  lcd.print("Piso ");
+  lcd.print(currentFloor);
 }
 
 void loop()
@@ -56,72 +51,52 @@ void loop()
     int requestedFloor = customKey - '0';
     if (requestedFloor >= 1 && requestedFloor <= 6 && requestedFloor != currentFloor)
     {
-      Serial.print("Requested: ");
-      Serial.println(requestedFloor);
-
       floorQueue.enqueue(requestedFloor);
-      floorQueue.print();
     }
   }
 
   if (!isMoving && !floorQueue.isEmpty())
   {
-    int targetFloor = floorQueue.dequeue();
-    floorQueue.print();
-
+    targetFloor = floorQueue.dequeue();
     if (targetFloor != currentFloor)
     {
-      Serial.print("Moving: ");
-      Serial.println(targetFloor);
-
-      if (targetFloor > currentFloor) {
-        lcd.clear();
-        lcd.print("Subiendo");
-      } else {
-        lcd.clear();
-        lcd.print("Bajando");
-      }
-
-      totalSteps = calculateSteps(currentFloor, targetFloor);
-      myStepper.moveTo(myStepper.currentPosition() + totalSteps);
-
       isMoving = true;
-      currentFloor = targetFloor;
     }
   }
 
   if (isMoving)
   {
-    myStepper.run();
+    if (currentFloor < targetFloor)
+    {
+      myStepper.moveTo(myStepper.currentPosition() + HEIGHTS[(int)currentFloor]);
+      myStepper.runToPosition();
+      currentFloor++;
+      lcd.setCursor(0, 0);
+      lcd.print("Subiendo      ");
+    }
+    else if (currentFloor > targetFloor)
+    {
+      myStepper.moveTo(myStepper.currentPosition() - HEIGHTS[(int)currentFloor - 1]);
+      myStepper.runToPosition();
+      currentFloor--;
+      lcd.setCursor(0, 0);
+      lcd.print("Bajando       ");
+    }
 
-    if (myStepper.distanceToGo() == 0)
+    lcd.setCursor(0, 1);
+    lcd.print("Piso ");
+    lcd.print(currentFloor);
+    lcd.print("   ");
+
+    if (currentFloor == targetFloor)
     {
       isMoving = false;
-      Serial.println("Reached floor");
-
-      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Esperando     ");
+      lcd.setCursor(0, 1);
+      lcd.print("Piso ");
+      lcd.print(currentFloor);
       delay(500);
     }
   }
-}
-
-float calculateSteps(int startFloor, int endFloor)
-{
-  float stepsToMove = 0;
-
-  if (endFloor > startFloor)
-  {
-    for (int i = startFloor; i < endFloor; i++)
-    {
-      stepsToMove += HEIGHTS[i];
-    }
-  }
-  else
-  {
-    for (int i = startFloor - 1; i >= endFloor; i--)
-    {
-      stepsToMove -= HEIGHTS[i];
-    }
-  }
-  return stepsToMove;
 }
