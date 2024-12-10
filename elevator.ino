@@ -27,6 +27,7 @@ Queue<int> floorQueue(6);
 int currentFloor = 1;
 int targetFloor = -1;
 bool isMoving = false;
+bool isGoingUp = false;
 
 void setup()
 {
@@ -61,6 +62,9 @@ void loop()
     if (targetFloor != currentFloor)
     {
       isMoving = true;
+      isGoingUp = targetFloor > currentFloor;
+      lcd.setCursor(0, 0);
+      lcd.print(isGoingUp ? "Subiendo     " : "Bajando      ");
     }
   }
 
@@ -71,16 +75,12 @@ void loop()
       myStepper.moveTo(myStepper.currentPosition() + HEIGHTS[(int)currentFloor]);
       myStepper.runToPosition();
       currentFloor++;
-      lcd.setCursor(0, 0);
-      lcd.print("Subiendo      ");
     }
     else if (currentFloor > targetFloor)
     {
       myStepper.moveTo(myStepper.currentPosition() - HEIGHTS[(int)currentFloor - 1]);
       myStepper.runToPosition();
       currentFloor--;
-      lcd.setCursor(0, 0);
-      lcd.print("Bajando       ");
     }
 
     lcd.setCursor(0, 1);
