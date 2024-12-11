@@ -3,6 +3,9 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "Queue.h"
+#include <SoftwareSerial.h>
+
+SoftwareSerial elevatorSerial(A0, A1);
 
 const byte ROWS = 4;
 const byte COLS = 3;
@@ -35,7 +38,8 @@ void setup()
 {
   lcd.init();
   lcd.backlight();
-  Serial.begin(9600);
+  Serial.begin(115200);
+  elevatorSerial.begin(9600);
 
   myStepper.setMaxSpeed(750);
   myStepper.setAcceleration(500);
@@ -51,6 +55,10 @@ void loop()
   char customKey = customKeypad.getKey();
   if (customKey)
   {
+    elevatorSerial.println(customKey);
+    Serial.print("Enviado: ");
+    Serial.println(customKey);
+
     if (customKey >= '1' && customKey <= '6')
     {
       int requestedFloor = customKey - '0';
@@ -60,8 +68,8 @@ void loop()
           !floorQueue.contains(requestedFloor))
       {
         floorQueue.enqueue(requestedFloor);
-        Serial.print("Floor added to queue: ");
-        Serial.println(requestedFloor);
+        // Serial.print("Floor added to queue: ");
+        // Serial.println(requestedFloor);
       }
     }
     else if (customKey >= 'a' && customKey <= 'f')
@@ -88,16 +96,16 @@ void loop()
         requestedFloor = 6;
         break;
       }
-      Serial.print("Exterior pressed: ");
-      Serial.println(requestedFloor);
+      // Serial.print("Exterior pressed: ");
+      // Serial.println(requestedFloor);
     }
   }
 
   if (!isMoving && targetFloor == -1 && !floorQueue.isEmpty())
   {
     targetFloor = floorQueue.dequeue();
-    Serial.print("Dequeued target floor: ");
-    Serial.println(targetFloor);
+    // Serial.print("Dequeued target floor: ");
+    // Serial.println(targetFloor);
     isGoingUp = targetFloor > currentFloor;
     isMoving = true;
     lcd.setCursor(0, 0);
