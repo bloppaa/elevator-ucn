@@ -55,10 +55,6 @@ void loop()
   char customKey = customKeypad.getKey();
   if (customKey)
   {
-    elevatorSerial.println(customKey);
-    Serial.print("Enviado: ");
-    Serial.println(customKey);
-
     if (customKey >= '1' && customKey <= '6')
     {
       int requestedFloor = customKey - '0';
@@ -74,30 +70,31 @@ void loop()
     }
     else if (customKey >= 'a' && customKey <= 'f')
     {
-      int requestedFloor;
+      char requestedFloor;
       switch (customKey)
       {
       case 'a':
-        requestedFloor = 1;
+        requestedFloor = '1';
         break;
       case 'b':
-        requestedFloor = 2;
+        requestedFloor = '2';
         break;
       case 'c':
-        requestedFloor = 3;
+        requestedFloor = '3';
         break;
       case 'd':
-        requestedFloor = 4;
+        requestedFloor = '4';
         break;
       case 'e':
-        requestedFloor = 5;
+        requestedFloor = '5';
         break;
       case 'f':
-        requestedFloor = 6;
+        requestedFloor = '6';
         break;
       }
-      // Serial.print("Exterior pressed: ");
-      // Serial.println(requestedFloor);
+
+      String message = "R" + String(requestedFloor);
+      elevatorSerial.print(message);
     }
   }
 
