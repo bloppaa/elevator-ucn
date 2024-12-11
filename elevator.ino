@@ -52,6 +52,12 @@ void setup()
 
 void loop()
 {
+  if (elevatorSerial.available())
+  {
+    String message = elevatorSerial.readStringUntil('\n');
+    Serial.println(message);
+  }
+
   char customKey = customKeypad.getKey();
   if (customKey)
   {
