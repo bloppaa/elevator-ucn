@@ -2,7 +2,7 @@
 
 SoftwareSerial elevatorSerial(A0, A1);
 
-int currentFloor = 1;
+int currentFloor = 6;
 bool isMoving = false;
 
 void setup() {
@@ -11,13 +11,15 @@ void setup() {
 }
 
 void loop() {
-  if (elevatorSerial.available()) {
+  if (elevatorSerial.available() > 0) {
     String message = elevatorSerial.readStringUntil('\n');
     
-    Serial.print("Request: ");
+    Serial.print("Received: ");
     Serial.println(message);
 
-    elevatorSerial.print(isMoving ? 'M' : 'I');
-    elevatorSerial.println(currentFloor);
+    if (message.charAt(0) == 'R') {
+      elevatorSerial.print(isMoving ? 'M' : 'I');
+      elevatorSerial.println(currentFloor);
+    }
   }
 }

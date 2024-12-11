@@ -22,6 +22,7 @@ byte colPins[COLS] = {6, 7, 8};
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
 const float HEIGHTS[] = {0, 2038, 2038, 2038, 2038, 2038};
+// const float HEIGHTS[] = {0, 8000, 5000, 3000, 3000, 3000};
 
 AccelStepper myStepper(AccelStepper::FULL4WIRE, 9, 11, 10, 12);
 
@@ -56,8 +57,7 @@ void loop()
   if (elevatorSerial.available())
   {
     String message = elevatorSerial.readStringUntil('\n');
-
-    Serial.print("Response: ");
+    Serial.print("Received: ");
     Serial.println(message);
 
     if (message.charAt(0) == 'M' || message.charAt(0) == 'I')
@@ -81,6 +81,8 @@ void loop()
         int d2 = abs(requested - otherCurrentFloor);
         if (d1 < d2)
         {
+          floorQueue.enqueue(requestedFloor - '0');
+          checkAndStartMovement();
           elevatorSerial.println("N");
         }
         else
@@ -121,21 +123,31 @@ void loop()
 
       elevatorSerial.print("R");
       elevatorSerial.println(requestedFloor);
+
+      Serial.print("Sent: ");
+      Serial.print("R");
+      Serial.println(requestedFloor);
     }
   }
+  checkAndStartMovement();
+  handleMovement();
+}
 
+void checkAndStartMovement()
+{
   if (!isMoving && targetFloor == -1 && !floorQueue.isEmpty())
   {
     targetFloor = floorQueue.dequeue();
-    // Serial.print("Dequeued target floor: ");
-    // Serial.println(targetFloor);
     isGoingUp = targetFloor > currentFloor;
     isMoving = true;
     lcd.setCursor(0, 0);
     lcd.print(isGoingUp ? "Subiendo     " : "Bajando      ");
-    myStepper.moveTo(myStepper.currentPosition() + (isGoingUp ? HEIGHTS[currentFloor] : -HEIGHTS[currentFloor - 1]));
+    myStepper.moveTo(myStepper.currentPosition() + (isGoingUp ? -HEIGHTS[currentFloor] : HEIGHTS[currentFloor - 1]));
   }
+}
 
+void handleMovement()
+{
   if (isMoving)
   {
     myStepper.run();
@@ -146,6 +158,7 @@ void loop()
       lcd.print("Piso ");
       lcd.print(currentFloor);
       lcd.print("   ");
+
       if (currentFloor == targetFloor)
       {
         isMoving = false;
@@ -156,7 +169,7 @@ void loop()
       }
       else
       {
-        myStepper.moveTo(myStepper.currentPosition() + (isGoingUp ? HEIGHTS[currentFloor] : -HEIGHTS[currentFloor - 1]));
+        myStepper.moveTo(myStepper.currentPosition() + (isGoingUp ? -HEIGHTS[currentFloor] : HEIGHTS[currentFloor - 1]));
       }
     }
   }
