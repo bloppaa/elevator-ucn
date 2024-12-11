@@ -34,6 +34,9 @@ int targetFloor = -1;
 bool isMoving = false;
 bool isGoingUp = false;
 
+unsigned long lastSerialRead = 0;
+const unsigned long SERIAL_READ_DELAY = 100;
+
 void setup()
 {
   lcd.init();
@@ -52,9 +55,10 @@ void setup()
 
 void loop()
 {
-  if (elevatorSerial.available())
-  {
+  if (elevatorSerial.available()) {
     String message = elevatorSerial.readStringUntil('\n');
+
+    Serial.print("Response: ");
     Serial.println(message);
   }
 
@@ -76,31 +80,10 @@ void loop()
     }
     else if (customKey >= 'a' && customKey <= 'f')
     {
-      char requestedFloor;
-      switch (customKey)
-      {
-      case 'a':
-        requestedFloor = '1';
-        break;
-      case 'b':
-        requestedFloor = '2';
-        break;
-      case 'c':
-        requestedFloor = '3';
-        break;
-      case 'd':
-        requestedFloor = '4';
-        break;
-      case 'e':
-        requestedFloor = '5';
-        break;
-      case 'f':
-        requestedFloor = '6';
-        break;
-      }
-
-      String message = "R" + String(requestedFloor);
-      elevatorSerial.print(message);
+      char requestedFloor = (customKey - 'a' + 1) + '0';
+      
+      elevatorSerial.print("R");
+      elevatorSerial.println(requestedFloor);
     }
   }
 
