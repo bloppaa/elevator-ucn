@@ -4,21 +4,24 @@
 #include <LiquidCrystal_I2C.h>
 #include "Queue.h"
 
-const byte ROWS = 2;
+const byte ROWS = 4;
 const byte COLS = 3;
 
 char hexaKeys[ROWS][COLS] = {
-    {'1', '2', '3'},
-    {'4', '5', '6'}};
+  {'1', '2', '3'},
+  {'4', '5', '6'},
+  {'1', '2', '3'},
+  {'4', '5', '6'},
+};
 
-byte rowPins[ROWS] = {2, 3};
-byte colPins[COLS] = {4, 5, 6};
+byte rowPins[ROWS] = {2, 3, 4, 5};
+byte colPins[COLS] = {6, 7, 8,};
 
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
 const float HEIGHTS[] = {0, 2038, 2038, 2038, 2038, 2038};
 
-AccelStepper myStepper(AccelStepper::FULL4WIRE, 8, 10, 9, 11);
+AccelStepper myStepper(AccelStepper::FULL4WIRE, 9, 11, 10, 12);
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
