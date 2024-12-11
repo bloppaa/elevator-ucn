@@ -8,11 +8,10 @@ const byte ROWS = 4;
 const byte COLS = 3;
 
 char hexaKeys[ROWS][COLS] = {
-  {'1', '2', '3'},
-  {'4', '5', '6'},
-  {'7', '8', '9'},
-  {'*', '0', '#'}
-};
+    {'1', '2', '3'},
+    {'4', '5', '6'},
+    {'a', 'b', 'c'},
+    {'d', 'e', 'f'}};
 
 byte rowPins[ROWS] = {2, 3, 4, 5};
 byte colPins[COLS] = {6, 7, 8};
@@ -52,14 +51,44 @@ void loop()
   char customKey = customKeypad.getKey();
   if (customKey)
   {
-    int requestedFloor = customKey - '0';
-    if (requestedFloor >= 1 && requestedFloor <= 6 &&
-        requestedFloor != currentFloor &&
-        !floorQueue.isFull() &&
-        !floorQueue.contains(requestedFloor))
+    if (customKey >= '1' && customKey <= '6')
     {
-      floorQueue.enqueue(requestedFloor);
-      Serial.print("Floor added to queue: ");
+      int requestedFloor = customKey - '0';
+      if (requestedFloor >= 1 && requestedFloor <= 6 &&
+          requestedFloor != currentFloor &&
+          !floorQueue.isFull() &&
+          !floorQueue.contains(requestedFloor))
+      {
+        floorQueue.enqueue(requestedFloor);
+        Serial.print("Floor added to queue: ");
+        Serial.println(requestedFloor);
+      }
+    }
+    else if (customKey >= 'a' && customKey <= 'f')
+    {
+      int requestedFloor;
+      switch (customKey)
+      {
+      case 'a':
+        requestedFloor = 1;
+        break;
+      case 'b':
+        requestedFloor = 2;
+        break;
+      case 'c':
+        requestedFloor = 3;
+        break;
+      case 'd':
+        requestedFloor = 4;
+        break;
+      case 'e':
+        requestedFloor = 5;
+        break;
+      case 'f':
+        requestedFloor = 6;
+        break;
+      }
+      Serial.print("Exterior pressed: ");
       Serial.println(requestedFloor);
     }
   }
