@@ -10,12 +10,12 @@ const byte COLS = 3;
 char hexaKeys[ROWS][COLS] = {
   {'1', '2', '3'},
   {'4', '5', '6'},
-  {'1', '2', '3'},
-  {'4', '5', '6'},
+  {'7', '8', '9'},
+  {'*', '0', '#'}
 };
 
 byte rowPins[ROWS] = {2, 3, 4, 5};
-byte colPins[COLS] = {6, 7, 8,};
+byte colPins[COLS] = {6, 7, 8};
 
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
@@ -53,53 +53,51 @@ void loop()
   if (customKey)
   {
     int requestedFloor = customKey - '0';
-    if (requestedFloor >= 1 && requestedFloor <= 6 && requestedFloor != currentFloor)
+    if (requestedFloor >= 1 && requestedFloor <= 6 &&
+        requestedFloor != currentFloor &&
+        !floorQueue.isFull() &&
+        !floorQueue.contains(requestedFloor))
     {
       floorQueue.enqueue(requestedFloor);
+      Serial.print("Floor added to queue: ");
+      Serial.println(requestedFloor);
     }
   }
 
-  if (!isMoving && !floorQueue.isEmpty())
+  if (!isMoving && targetFloor == -1 && !floorQueue.isEmpty())
   {
     targetFloor = floorQueue.dequeue();
-    if (targetFloor != currentFloor)
-    {
-      isMoving = true;
-      isGoingUp = targetFloor > currentFloor;
-      lcd.setCursor(0, 0);
-      lcd.print(isGoingUp ? "Subiendo     " : "Bajando      ");
-    }
+    Serial.print("Dequeued target floor: ");
+    Serial.println(targetFloor);
+    isGoingUp = targetFloor > currentFloor;
+    isMoving = true;
+    lcd.setCursor(0, 0);
+    lcd.print(isGoingUp ? "Subiendo     " : "Bajando      ");
+    myStepper.moveTo(myStepper.currentPosition() + (isGoingUp ? HEIGHTS[currentFloor] : -HEIGHTS[currentFloor - 1]));
   }
 
   if (isMoving)
   {
-    if (currentFloor < targetFloor)
+    myStepper.run();
+    if (myStepper.distanceToGo() == 0)
     {
-      myStepper.moveTo(myStepper.currentPosition() + HEIGHTS[(int)currentFloor]);
-      myStepper.runToPosition();
-      currentFloor++;
-    }
-    else if (currentFloor > targetFloor)
-    {
-      myStepper.moveTo(myStepper.currentPosition() - HEIGHTS[(int)currentFloor - 1]);
-      myStepper.runToPosition();
-      currentFloor--;
-    }
-
-    lcd.setCursor(0, 1);
-    lcd.print("Piso ");
-    lcd.print(currentFloor);
-    lcd.print("   ");
-
-    if (currentFloor == targetFloor)
-    {
-      isMoving = false;
-      lcd.setCursor(0, 0);
-      lcd.print("Esperando     ");
+      currentFloor += isGoingUp ? 1 : -1;
       lcd.setCursor(0, 1);
       lcd.print("Piso ");
       lcd.print(currentFloor);
-      delay(500);
+      lcd.print("   ");
+      if (currentFloor == targetFloor)
+      {
+        isMoving = false;
+        targetFloor = -1;
+        lcd.setCursor(0, 0);
+        lcd.print("Esperando     ");
+        delay(500);
+      }
+      else
+      {
+        myStepper.moveTo(myStepper.currentPosition() + (isGoingUp ? HEIGHTS[currentFloor] : -HEIGHTS[currentFloor - 1]));
+      }
     }
   }
 }
